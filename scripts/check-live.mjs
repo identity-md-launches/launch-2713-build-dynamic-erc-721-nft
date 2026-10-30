@@ -1,0 +1,14 @@
+import { createPublicClient, http, parseAbi } from 'viem';
+import { sepolia } from 'viem/chains';
+const rpc = 'https://ethereum-sepolia-rpc.publicnode.com';
+const client = createPublicClient({ chain: sepolia, transport: http(rpc, { timeout: 15000, retryCount: 1 }) });
+if (await client.getChainId() !== 11155111) throw new Error('RPC is not Sepolia');
+const response = await fetch('https://api.squeekchain.com/v1/status', { signal: AbortSignal.timeout(15000) });
+if (!response.ok) throw new Error(`API HTTP ${response.status}`);
+const data = await response.json();
+const m = data.measurement;
+if (data.schemaVersion !== 1 || !m || !Number.isInteger(m.rpmMilli)) throw new Error('Unexpected status format');
+const abi = parseAbi(['function state() view returns ((uint64 settledThroughRound,uint64 cumulativeWork,uint96 cumulativeBlockUnits,uint64 blockHeight,uint96 blockProgress,uint32 workPerThousandBlocks,uint256 authorizationNonce,bool paused))']);
+const core = await client.readContract({ address: '0x74665dAecA35A2303e767E76a2FF1FB6F93e119f', abi, functionName: 'state' });
+if (core.cumulativeBlockUnits !== core.blockHeight * 1_000_000_000n + core.blockProgress || core.blockProgress >= 1_000_000_000n) throw new Error('SqueekCore ledger identities failed');
+console.log(JSON.stringify({ checkedAt: new Date().toISOString(), chainId: 11155111, rpc, api: 'https://api.squeekchain.com/v1/status', rpm: m.rpmMilli / 1000, wheelState: m.coreStatus, freshness: m.freshness, provenance: m.provenance, observedAt: m.observedAt, settledBlockHeight: String(core.blockHeight), blockProgressBillionths: String(core.blockProgress), coreTupleDecoded: true }, null, 2));

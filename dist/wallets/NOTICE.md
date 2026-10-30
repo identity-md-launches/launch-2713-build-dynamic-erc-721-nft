@@ -1,0 +1,1 @@
+MetaMask, Rabby and Phantom marks are copied unmodified from RainbowKit's `packages/rainbowkit/src/wallets/walletConnectors/` (https://github.com/rainbow-me/rainbowkit), retrieved 2026-10-30. RainbowKit is MIT licensed; see LICENSE in this directory. Wallet names and marks belong to their respective owners. Coinbase's inline mark follows the pinned wallet connector reference.
